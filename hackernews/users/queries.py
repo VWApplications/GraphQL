@@ -11,6 +11,7 @@ query {
 """
 
 from django.contrib.auth import get_user_model
+from graphql import GraphQLError
 from .types import UserType
 import graphene
 
@@ -40,6 +41,6 @@ class UserQuery(graphene.ObjectType):
         user = info.context.user
         
         if user.is_anonymous:
-            raise Exception("Not logged in")
+            raise GraphQLError("Not logged in")
 
         return user

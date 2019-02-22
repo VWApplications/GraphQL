@@ -9,11 +9,19 @@ mutation {
     id
     url
     description
+    postedBy {
+      id
+      username
+      email
+    }
   }
 }
 """
 
-from .models import Link
+from users.types import UserType
+from .types import LinkType
+from .models import Link, Vote
+from graphql import GraphQLError
 import graphene
 
 class CreateLink(graphene.Mutation):
@@ -25,6 +33,7 @@ class CreateLink(graphene.Mutation):
     id = graphene.Int()
     url = graphene.String()
     description = graphene.String()
+    posted_by = graphene.Field(UserType)
 
     class Arguments:
         """
@@ -42,9 +51,15 @@ class CreateLink(graphene.Mutation):
         CreateLink com os dados que acabaram de ser criados.
         """
 
+        user = info.context.user or None
+
+        if user.is_anonymous:
+          raise GraphQLError("O usuário deve ta logado para votar!")
+
         link = Link(
             url=url,
-            description=description
+            description=description,
+            posted_by=user
         )
 
         link.save()
@@ -53,4 +68,43 @@ class CreateLink(graphene.Mutation):
             id=link.id,
             url=link.url,
             description=link.description,
+            posted_by=link.posted_by
         )
+
+
+class CreateVote(graphene.Mutation):
+    """
+    Cria um voto de um determinado link
+    """
+
+    user = graphene.Field(UserType)
+    link = graphene.Field(LinkType)
+
+    class Arguments:
+        """
+        Corpo da requisição
+        """
+
+        link_id = graphene.Int()
+
+    def mutate(self, info, link_id):
+        """
+        Método responsável por criar o voto.
+        """
+
+        user = info.context.user
+
+        if user.is_anonymous:
+            raise GraphQLError('Você deve está logado para votar!')
+
+        link = Link.objects.filter(id=link_id).first()
+
+        if not link:
+            raise GraphQLError('Link invalido!')
+
+        Vote.objects.create(
+            user=user,
+            link=link,
+        )
+
+        return CreateVote(user=user, link=link)
