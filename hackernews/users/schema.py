@@ -7,6 +7,7 @@ em tempo real com o servidor para ser informado imediatamente sobre eventos impo
 
 from .queries import UserQuery
 from .mutations import CreateUser
+import graphql_jwt
 import graphene
 
 
@@ -22,6 +23,23 @@ class Mutation(graphene.ObjectType):
     """
     Cria uma classe de mutação com os campos a serem resolvidos,
     o que aponta para as nossas mutações definidas.
+
+    mutation {
+      tokenAuth(username: "...", password: "...") {
+        token
+      }
+    }
+
+    mutation {
+      verifyToken(token: ...) {
+        payload
+      }
+    }
+
+    User o JWT como prefixo no header, ou seja, Authorization: JWT <token>
     """
 
     create_user = CreateUser.Field()
+    token_auth = graphql_jwt.ObtainJSONWebToken.Field()
+    verify_token = graphql_jwt.Verify.Field()
+    refresh_token = graphql_jwt.Refresh.Field()
