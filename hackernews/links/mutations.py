@@ -54,7 +54,7 @@ class CreateLink(graphene.Mutation):
         user = info.context.user or None
 
         if user.is_anonymous:
-          raise GraphQLError("O usuário deve ta logado para votar!")
+          raise GraphQLError("O usuário deve ta logado para criar um link!")
 
         link = Link(
             url=url,
@@ -70,6 +70,85 @@ class CreateLink(graphene.Mutation):
             description=link.description,
             posted_by=link.posted_by
         )
+
+
+class UpdateLink(graphene.Mutation):
+    """
+    Atualiza os dados de um link
+    """
+
+    link = graphene.Field(LinkType)
+
+    class Arguments:
+        """
+        Corpo da requisição
+        """
+
+        linkID = graphene.Int()
+        url = graphene.String()
+        description = graphene.String()
+
+    def mutate(self, info, linkID, url, description):
+        """
+        Atualiza os dados de um link no banco de dados
+        e retorna a classe UpdateLink com os dados que
+        acabaram de ser atualizados.
+        """
+
+        user = info.context.user or None
+
+        if user.is_anonymous:
+            raise GraphQLError("O usuário deve ta logado para atualizar o link!")
+
+        link = Link.objects.get(id=linkID)
+
+        if link.posted_by != user:
+            raise GraphQLError("Somente o usuário que criou o link pode edita-lo.")
+
+        link.url = url
+        link.description = description
+
+        link.save()
+
+        return UpdateLink(link=link)
+
+
+class DeleteLink(graphene.Mutation):
+    """
+    Deleta um determinado link
+    """
+
+    msg = graphene.String()
+
+    class Arguments:
+        """
+        Corpo da requisição
+        """
+
+        linkID = graphene.Int()
+
+    def mutate(self, info, linkID):
+        """
+        Atualiza os dados de um link no banco de dados
+        e retorna a classe UpdateLink com os dados que
+        acabaram de ser atualizados.
+        """
+
+        user = info.context.user or None
+
+        if user.is_anonymous:
+            raise GraphQLError("O usuário deve ta logado para deletar o link!")
+
+        link = Link.objects.get(id=linkID)
+
+        if link.posted_by != user:
+            raise GraphQLError("Somente o usuário que criou o link pode deleta-lo.")
+
+        msg = "Link {0} deletado com sucesso".format(link.id)
+
+        link.delete()
+
+        return DeleteLink(msg=msg)
 
 
 class CreateVote(graphene.Mutation):

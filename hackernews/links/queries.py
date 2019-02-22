@@ -16,6 +16,7 @@ query {
 
 from .types import LinkType, VoteType
 from .models import Link, Vote
+from graphql import GraphQLError
 from django.db.models import Q
 import graphene
 
@@ -26,11 +27,17 @@ class LinkQuery(graphene.ObjectType):
     """
 
     links = graphene.List(
-      LinkType,
-      search=graphene.String(),
-      first=graphene.Int(),
-      skip=graphene.Int()
+        LinkType,
+        search=graphene.String(),
+        first=graphene.Int(),
+        skip=graphene.Int()
     )
+
+    link = graphene.Field(
+        LinkType,
+        id=graphene.Int()
+    )
+
     votes = graphene.List(VoteType)
 
     def resolve_links(self, info, search=None, first=None, skip=None, **kwargs):
@@ -54,6 +61,23 @@ class LinkQuery(graphene.ObjectType):
             query = query[:first]
 
         return query
+
+    def resolve_link(self, info, **kwargs):
+        """
+        Retorna um link especifico
+        """
+
+        id = kwargs.get('id')
+
+        link = None
+
+        if id is not None:
+            try:
+                link = Link.objects.get(pk=id)
+            except Exception:
+                raise GraphQLError("Link com o ID passado não existe!")
+
+        return link
 
     def resolve_votes(self, info, **kwargs):
         """

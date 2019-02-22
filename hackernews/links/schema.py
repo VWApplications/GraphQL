@@ -6,7 +6,7 @@ em tempo real com o servidor para ser informado imediatamente sobre eventos impo
 """
 
 from .queries import LinkQuery
-from .mutations import CreateLink, CreateVote
+from .mutations import CreateLink, CreateVote, UpdateLink, DeleteLink
 import graphene
 
 
@@ -25,4 +25,6 @@ class Mutation(graphene.ObjectType):
     """
 
     create_link = CreateLink.Field()
+    update_link = UpdateLink.Field()
+    delete_link = DeleteLink.Field()
     create_vote = CreateVote.Field()
